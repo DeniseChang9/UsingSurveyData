@@ -9,4 +9,4 @@ This project uses the ratio estimator approach to estimate total respondents by 
 - README.md: Overview of the project.
 
 ## LLM Usage 
-No LLM was used of this 
+No LLM was used for this repository 
