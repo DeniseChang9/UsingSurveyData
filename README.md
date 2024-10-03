@@ -1,12 +1,12 @@
 # Estimating Total Respondents by State in the 2022 ACS: A Ratio Estimator Approach
 
-##Overview 
+## Overview 
 This project uses the ratio estimator approach to estimate total respondents by state from the 2022 ACS data and compares these estimates to actual counts.
 
-##File Structure
+## File Structure
 - UsingSurvey.qmd: Quarto document with the code and analysis.
 - UsingSurvey.pdf: PDF report of the analysis. 
 - README.md: Overview of the project.
 
-##LLM Usage 
+## LLM Usage 
 No LLM was used of this 
