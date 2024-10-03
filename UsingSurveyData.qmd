@@ -1,0 +1,186 @@
+---
+title: "Estimating Total Respondents Using Ratio Estimator Approach"
+format: pdf
+author: "Krishna Kumar, Shamayla Durrin and Denise Chang"
+---
+
+# Introduction
+
+In this document, we use survey data from the 2022 American Community Survey (ACS) obtained through IPUMS. We apply the ratio estimator approach of Laplace to estimate the total number of respondents in each state based on the number of those with doctoral degrees. We compare these estimates to the actual number of respondents and discuss any differences.
+
+# How to Obtain the Data
+
+-   Go to <https://www.ipums.org/>
+
+-   Go to IPUMS USA
+
+-   Click 'Get Data'
+
+-   Click 'Select samples' and choose only '2022 ACS'
+
+-   Go to 'Household' -\> 'Geographic' and click the + on 'STATEICP'
+
+-   Go to 'Person' -\> 'Demographic' and click the + on 'SEX'
+
+-   Go to 'Person' -\> 'Education' and click the + on 'EDUC'
+
+-   Click view cart
+
+-   Create data extract
+
+-   Change data format to .csv
+
+-   Submit extract
+
+-   You will then get an email when the data is ready to download
+
+-   Download the data in your directory and read it using the code below.
+
+# Overview of the Ratio Estimators Approach
+
+The Ratio Estimator Approach calculates the ratio of two means.
+
+The ratio estimator is a method used to estimate the total size or characteristic of a population based on a sample. By calculating the ratio between a known variable and a target variable (for example, the ratio of doctoral degree holders to the total number of respondents in a sample), this ratio is then applied to a subgroup to estimate its total size. The method assumes that the ratio is relatively stable across different subgroups. For example, if 10% of California respondents have a doctoral degree, we can apply this ratio to other states to estimate their total respondents from the number with doctoral degrees.
+
+This approach dates back to Quetelet and Laplace, who used similar methods to estimate populations based on partial data. A well-known variant is the capture-recapture method, which is commonly used in ecology. In this technique, a sample is captured, marked, and then released back into the population. Later, a second sample is captured, and the proportion of marked individuals is used to estimate the total population size. The ratio estimator is powerful when direct measurement of the whole population is impractical, allowing for accurate inference from smaller, representative samples.
+
+Finding Total Respondents In State Using The Ratio Estimator
+
+We will use the ratio estimator approach by first calculating the proportion of respondents with doctoral degrees to the total respondents in California. This ratio will be used as a benchmark for all other states. By applying this ratio to the number of doctoral degree holders in each state, we can estimate the total number of respondents for each state. This approach assumes that the proportion of doctoral degree holders is similar across states, allowing us to scale up from the known subset to estimate the full population.
+
+-   First we count the total number of respondents with a doctoral degree
+
+-   Then we calculate the total number of respondents in California
+
+-   Then we do total number of respondents with doctoral/total number of respondents in california
+
+-   Then we find the estimated total using our ratio: we do total number of doctoral divided by our california ratio
+
+-   Then we compare the estimated values with the actual values
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| message: FALSE
+#| include: FALSE
+
+#install.packages("ipumsr")
+
+library(cancensus)
+library(canlang)
+library(knitr)
+library(maps)
+library(tidycensus)
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(ipumsr)
+
+ipums_extract <- read_csv("usa_00002.csv.gz")
+
+
+ipums_extract <- 
+  ipums_extract |>
+  select(STATEICP, SEX, EDUC, EDUCD)
+
+# Viewing dataset
+ipums_extract
+```
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| message: FALSE
+#| include: FALSE
+
+# finding number of respondents with doctoral degree (code 116) in each state
+
+doctoral_counts <- ipums_extract %>%
+  filter(EDUCD == 116) %>%
+  group_by(STATEICP) %>%
+  summarise(num_doctoral = n())
+
+# View the counts of respondents with a doctoral degree per state
+doctoral_counts
+```
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| message: FALSE
+#| include: FALSE
+
+# california total respondents for all education levels
+california_total <- 391171
+
+#California respondents with doctoral degree (stateicp == 71)
+california_doctoral <- doctoral_counts %>%
+  filter(STATEICP == 71) %>% # 
+  pull(num_doctoral)
+
+# Calculate the ratio of doctoral respondents to total respondents in California
+ratio_california <- california_doctoral / california_total
+
+# Print the ratio
+print(ratio_california)
+```
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| message: FALSE
+#| include: FALSE
+
+# estimating total respondents in each state using our ratio (dividing total doctoral respondents by our ratio of california)
+
+estimates <- doctoral_counts %>%
+  mutate(estimated_total = num_doctoral / ratio_california)
+
+# View the estimates
+print(estimates)
+
+```
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| message: FALSE
+#| include: FALSE
+
+# Calculate actual counts of respondents in dataset for each state
+actual_counts <- ipums_extract %>%
+  group_by(STATEICP) %>%
+  summarise(actual_total = n())
+
+# View the actual counts
+print(actual_counts)
+
+```
+
+\newpage
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| tbl-cap: Comparison of Estimated and Actual Respondents by State
+
+comparison_results <- estimates %>%
+  left_join(actual_counts, by = "STATEICP") %>%
+  mutate(difference = estimated_total - actual_total) %>%
+  rename(
+    `State ICP` = STATEICP,
+    `Number of Doctoral Respondents` = num_doctoral,
+    `Estimated Total Respondents` = estimated_total,
+    `Actual Total Respondents` = actual_total,
+    `Difference` = difference
+  )
+
+
+kable(comparison_results, caption = "Comparison of Estimated and Actual Respondents by State")
+```
+
+# Why are the Actual values and Estimated Values Different?
+
+-   The ratio is based on one state's data (California) so it must not uniformly apply to all states, as each state has different educational systems and each state has different demographics of people.
+
+-   The reason the estimates of total respondents differ from the actual numbers is due to our assumption that the ratio of respondents with doctoral degrees is constant across all states. In reality, this is not the case, as many states have varying levels of resources that impact higher education. Some states may lack access to higher education institutions, leading to a lower proportion of doctoral degree holders. Factors such as income disparities, state education policies, and local economic conditions can significantly influence the number of individuals pursuing advanced degrees. Consequently, states with fewer resources or less emphasis on higher education will have lower ratios of doctoral degree holders, causing our estimates to be off.
