@@ -1,13 +1,34 @@
 ---
 title: "Estimating Total Respondents Using Ratio Estimator Approach"
-author: "Krishna Kumar, Shamayla Durrin and Denise Chang"
+author: 
+  - Shamayla Durrin
+  - Denise Chang 
+  - Krishna Kumar
 thanks: "Code and data supporting this analysis are available at: https://github.com/DeniseChang9/UsingSurveyData"
 date: today
 date-format: long
 format: pdf
-number-sections: true
 bibliography: references.bib
 ---
+
+```{r}
+#| echo: FALSE 
+#| warning: FALSE
+#| message: FALSE
+#| include: FALSE
+
+# Installs necessary packages for this paper
+install.packages("cancensus")
+install.packages("canlang")
+install.packages("knitr")
+install.packages("maps")
+install.packages("tidycensus")
+install.packages("tidyverse")
+install.packages("readr")
+install.packages("dplyr")
+install.packages("ipumsr")
+```
+
 
 # Introduction
 
@@ -84,9 +105,6 @@ ipums_extract <- read_csv("usa_00002.csv.gz")
 ipums_extract <- 
   ipums_extract |>
   select(STATEICP, SEX, EDUC, EDUCD)
-
-# Viewing dataset
-ipums_extract
 ```
 
 ```{r}
@@ -100,9 +118,6 @@ doctoral_counts <- ipums_extract %>%
   filter(EDUCD == 116) %>%
   group_by(STATEICP) %>%
   summarise(num_doctoral = n())
-
-# View the counts of respondents with a doctoral degree per state
-doctoral_counts
 ```
 
 ```{r}
@@ -116,14 +131,11 @@ california_total <- 391171
 
 # California respondents with doctoral degree (stateicp == 71)
 california_doctoral <- doctoral_counts %>%
-  filter(STATEICP == 71) %>% # 
+  filter(STATEICP == 71) %>% 
   pull(num_doctoral)
 
 # Calculate the ratio of doctoral respondents to total respondents in California
 ratio_california <- california_doctoral / california_total
-
-# Print the ratio
-print(ratio_california)
 ```
 
 ```{r}
@@ -136,10 +148,6 @@ print(ratio_california)
 
 estimates <- doctoral_counts %>%
   mutate(estimated_total = num_doctoral / ratio_california)
-
-# View the estimates
-print(estimates)
-
 ```
 
 ```{r}
@@ -152,10 +160,6 @@ print(estimates)
 actual_counts <- ipums_extract %>%
   group_by(STATEICP) %>%
   summarise(actual_total = n())
-
-# View the actual counts
-print(actual_counts)
-
 ```
 
 \newpage
